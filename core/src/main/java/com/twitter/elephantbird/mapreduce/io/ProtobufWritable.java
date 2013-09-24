@@ -32,4 +32,10 @@ public class ProtobufWritable<M extends Message> extends BinaryWritable<M> {
   protected BinaryConverter<M> getConverterFor(Class<M> clazz) {
     return ProtobufConverter.newInstance(clazz);
   }
+  
+  // see com.twitter.elephantbird.hive.serde.ProtobufDeserializer
+  @SuppressWarnings("unchecked")
+  public void setMessage(Object message) {
+    set((M)message);
+  }
 }

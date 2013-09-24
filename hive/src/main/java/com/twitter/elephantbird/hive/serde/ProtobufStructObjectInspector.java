@@ -3,6 +3,7 @@ package com.twitter.elephantbird.hive.serde;
 import java.util.List;
 
 import com.google.common.collect.Lists;
+import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
@@ -260,7 +261,9 @@ public final class ProtobufStructObjectInspector extends SettableStructObjectIns
   public Object setStructFieldData(Object data, StructField field, Object fieldValue) {
     return ((Message) data)
         .toBuilder()
-        .setField(descriptor.findFieldByName(field.getFieldName()), fieldValue)
+        // MiB
+        //.setField(descriptor.findFieldByName(field.getFieldName()), fieldValue)
+        .setField(((DescriptorProto)data).getDescriptor().findFieldByName(field.getFieldName()), fieldValue)        
         .build();
   }
 
