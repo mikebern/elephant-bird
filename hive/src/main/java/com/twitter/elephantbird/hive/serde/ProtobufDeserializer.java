@@ -15,11 +15,13 @@ import org.apache.hadoop.hive.serde2.SerDeException;
 import org.apache.hadoop.hive.serde2.SerDeStats;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
+import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.hive.serde2.objectinspector.StandardStructObjectInspector;
 
@@ -96,8 +98,8 @@ public class ProtobufDeserializer<M extends Message> implements SerDe {
   @Override
   public Writable serialize(Object obj, ObjectInspector objInspector) throws SerDeException {
     // use the supplied StructObjectInspector to convert the given object into a protobuf message
-    StandardStructObjectInspector ssoi = (StandardStructObjectInspector)objInspector;
-    ProtobufStructObjectInspector pbsoi = (ProtobufStructObjectInspector)objectInspector;
+    StructObjectInspector ssoi = (StructObjectInspector)objInspector;
+    StructObjectInspector pbsoi = (StructObjectInspector)objectInspector;
     
     List<? extends StructField> srcFields = ssoi.getAllStructFieldRefs();
     List<? extends StructField> dstFields = pbsoi.getAllStructFieldRefs();
@@ -124,6 +126,8 @@ public class ProtobufDeserializer<M extends Message> implements SerDe {
           b.setField(dstField.getFieldDescriptor(), ((FloatWritable)val).get());
         } else if(val instanceof DoubleWritable) {
           b.setField(dstField.getFieldDescriptor(), ((DoubleWritable)val).get());
+        } else if(val instanceof Text) {
+          b.setField(dstField.getFieldDescriptor(), ((Text)val).toString());
         } else {
           b.setField(dstField.getFieldDescriptor(), val);
         }
