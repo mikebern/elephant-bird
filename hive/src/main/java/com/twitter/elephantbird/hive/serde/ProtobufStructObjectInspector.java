@@ -292,7 +292,19 @@ public final class ProtobufStructObjectInspector extends SettableStructObjectIns
 
   @Override
   public StructField getStructFieldRef(String fieldName) {
-    return new ProtobufStructField(descriptor.findFieldByName(fieldName));
+    FieldDescriptor fieldDesc = descriptor.findFieldByName(fieldName);
+    if (fieldDesc == null) {
+      // CRO 21Jan2014: Hive casing causes confusion; search for descriptor one name at a time
+      //  see StandardStructObjectInspector.MyField constructor
+      for(FieldDescriptor fd : descriptor.getFields()) {
+        if(fd.getName().toLowerCase().equals(fieldName)) {
+          //System.err.println("Found a field descriptor: " + fieldName);
+          fieldDesc = fd;
+          break;
+        }
+      }
+    }
+    return new ProtobufStructField(fieldDesc);
   }
 
   @Override
