@@ -10,6 +10,7 @@ import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.Descriptors.FieldDescriptor.Type;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
+import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.Message;
 import java.io.Externalizable;
 import java.io.IOException;
@@ -25,12 +26,29 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectIn
 
 public final class ProtobufStructObjectInspector extends SettableStructObjectInspector implements Externalizable{
 
-  public static class ProtobufStructField implements StructField {
+  public static class ProtobufStructField implements StructField, Externalizable {
 
     private ObjectInspector oi = null;
     private String comment = null;
     private FieldDescriptor fieldDescriptor;
 
+    public ProtobufStructField() { super(); }
+    
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+        out.writeObject(fieldDescriptor.toProto());
+    }
+
+    @Override
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        FieldDescriptorProto fdp = (FieldDescriptorProto) in.readObject(); 
+        Descriptor containingType = (fdp).getDescriptorForType().getContainingType();
+        String fieldName = fdp.getName();
+        fieldDescriptor = containingType.findFieldByName(fieldName);
+        oi = this.createOIForField();
+    }
+    
+    
     @SuppressWarnings("unchecked")
     public ProtobufStructField(FieldDescriptor fieldDescriptor) {
       this.fieldDescriptor = fieldDescriptor;
@@ -109,7 +127,7 @@ public final class ProtobufStructObjectInspector extends SettableStructObjectIns
   
   public ProtobufStructObjectInspector() { super(); }
   
-  @Override
+    @Override
     public void writeExternal(ObjectOutput out) throws IOException {
         out.writeObject(descriptor.toProto());
     }
