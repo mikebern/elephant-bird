@@ -9,6 +9,7 @@ import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.Descriptors.FieldDescriptor.Type;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.Message;
 import java.io.Externalizable;
 import java.io.IOException;
@@ -110,12 +111,12 @@ public final class ProtobufStructObjectInspector extends SettableStructObjectIns
   
   @Override
     public void writeExternal(ObjectOutput out) throws IOException {
-        out.writeObject(descriptor);
+        out.writeObject(descriptor.toProto());
     }
 
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        descriptor = (Descriptor) in.readObject();
+        descriptor = ((DescriptorProto) in.readObject()).getDescriptorForType();
         populateStructFields();
     }
 
