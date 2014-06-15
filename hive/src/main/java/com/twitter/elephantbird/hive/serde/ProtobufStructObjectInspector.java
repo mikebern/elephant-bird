@@ -10,6 +10,10 @@ import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.Descriptors.FieldDescriptor.Type;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
@@ -18,7 +22,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.SettableStructObjectInspect
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 
-public final class ProtobufStructObjectInspector extends SettableStructObjectInspector {
+public final class ProtobufStructObjectInspector extends SettableStructObjectInspector implements Externalizable{
 
   public static class ProtobufStructField implements StructField {
 
@@ -101,13 +105,55 @@ public final class ProtobufStructObjectInspector extends SettableStructObjectIns
   private Descriptor descriptor;
   private List<StructField> structFields = Lists.newArrayList();
 
+  
+  public ProtobufStructObjectInspector() { super(); }
+  
+  @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+        out.writeObject(descriptor);
+    }
+
+    @Override
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        descriptor = (Descriptor) in.readObject();
+        populateStructFields();
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 31 * hash + (this.descriptor != null ? this.descriptor.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final ProtobufStructObjectInspector other = (ProtobufStructObjectInspector) obj;
+        if (this.descriptor != other.descriptor && (this.descriptor == null || !this.descriptor.equals(other.descriptor))) {
+            return false;
+        }
+        return true;
+    }
+    
+    
+  
   ProtobufStructObjectInspector(Descriptor descriptor) {
     this.descriptor = descriptor;
-    for (FieldDescriptor fd : descriptor.getFields()) {
+    populateStructFields();
+  }
+
+  private void populateStructFields() {
+      for (FieldDescriptor fd : descriptor.getFields()) {
       structFields.add(new ProtobufStructField(fd));
     }
   }
-
+  
   @Override
   public Category getCategory() {
     return Category.STRUCT;
