@@ -45,7 +45,7 @@ public class ThriftBinaryDeserializer extends TDeserializer {
    */
   public void deserialize(TBase base, byte[] bytes, int offset, int len) throws TException {
     protocol.reset();
-    protocol.setReadLength(len); // reduces OutOfMemoryError exceptions
+    //protocol.setReadLength(len); // reduces OutOfMemoryError exceptions
     trans.reset(bytes, offset, len);
     base.read(protocol);
   }

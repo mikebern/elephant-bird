@@ -77,14 +77,14 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <slf4j.version>1.6.4</slf4j.version>
     <apache.hadoop1.version>1.1.2</apache.hadoop1.version> <!-- for hadoop1 profile -->
-    <apache.hadoop2.version>2.0.3-alpha</apache.hadoop2.version> <!-- for hadoop2 profile -->
+    <apache.hadoop2.version>2.3.0</apache.hadoop2.version> <!-- for hadoop2 profile -->
     <apache.pig.version>0.11.1</apache.pig.version>
     <apache.crunch.hadoop1.version>0.8.2</apache.crunch.hadoop1.version>
     <apache.crunch.hadoop2.version>0.8.2-hadoop2</apache.crunch.hadoop2.version>
     <apache.hive.version>0.8.0</apache.hive.version>
     <apache.mahout.version>0.6</apache.mahout.version>
     <apache.lucene.version>4.0.0</apache.lucene.version>
-    <protobuf.version>2.4.1</protobuf.version>
+    <protobuf.version>2.5.0</protobuf.version>
     <hadoop-lzo.version>0.4.19</hadoop-lzo.version>
   </properties>
 
@@ -248,7 +248,7 @@
       <dependency>
         <groupId>org.apache.thrift</groupId>
         <artifactId>libthrift</artifactId>
-        <version>0.7.0</version>
+        <version>0.9.1</version>
       </dependency>
       <dependency>
         <groupId>com.googlecode.json-simple</groupId>
