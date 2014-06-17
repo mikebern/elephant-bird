@@ -81,7 +81,7 @@
     <apache.pig.version>0.11.1</apache.pig.version>
     <apache.crunch.hadoop1.version>0.8.2</apache.crunch.hadoop1.version>
     <apache.crunch.hadoop2.version>0.8.2-hadoop2</apache.crunch.hadoop2.version>
-    <apache.hive.version>0.8.0</apache.hive.version>
+    <apache.hive.version>0.12.0</apache.hive.version>
     <apache.mahout.version>0.6</apache.mahout.version>
     <apache.lucene.version>4.0.0</apache.lucene.version>
     <protobuf.version>2.5.0</protobuf.version>
@@ -505,12 +505,12 @@
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.12.4</version>
+          <version>2.17</version>
           <dependencies>
             <dependency>
               <groupId>org.apache.maven.surefire</groupId>
               <artifactId>surefire-junit47</artifactId>
-              <version>2.12.4</version>
+              <version>2.17</version>
             </dependency>
           </dependencies>
           <configuration>

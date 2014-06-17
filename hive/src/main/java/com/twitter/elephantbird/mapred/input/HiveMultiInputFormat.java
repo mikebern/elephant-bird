@@ -47,7 +47,7 @@ public class HiveMultiInputFormat
     if (!"".equals(HiveConf.getVar(job, HiveConf.ConfVars.PLAN))) {
       // Running as a Hive query. Use MapredWork for metadata.
       Map<String, PartitionDesc> partitionDescMap =
-          Utilities.getMapRedWork(job).getPathToPartitionInfo();
+          Utilities.getMapWork(job).getPathToPartitionInfo();
 
       if (!partitionDescMap.containsKey(split.getPath().getParent().toUri().toString())) {
         throw new RuntimeException("Failed locating partition description for "
