@@ -23,6 +23,7 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,7 +42,8 @@ public final class ProtobufStructObjectInspector extends SettableStructObjectIns
         oos.writeObject(proto);
         oos.close();
         byte[] serializedProto = baos.toByteArray();
-        out.write(serializedProto);  
+        byte[] bytesToSave = Arrays.copyOf(serializedProto, 131072);
+        out.write(bytesToSave);  
     }
     
     private static DescriptorProtos.FileDescriptorProto readProto(ObjectInput in) throws IOException, ClassNotFoundException {
