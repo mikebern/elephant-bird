@@ -15,10 +15,14 @@ import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.Message;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,6 +35,25 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectIn
 
 public final class ProtobufStructObjectInspector extends SettableStructObjectInspector implements Externalizable{
 
+  private static void writeProto(ObjectOutput out, DescriptorProtos.FileDescriptorProto proto) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(131072);
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeObject(proto);
+        oos.close();
+        byte[] serializedProto = baos.toByteArray();
+        out.write(serializedProto);  
+    }
+    
+    private static DescriptorProtos.FileDescriptorProto readProto(ObjectInput in) throws IOException, ClassNotFoundException {
+        byte[] serializedProto = new byte[131072]; 
+        in.read(serializedProto);
+        ByteArrayInputStream bais = new ByteArrayInputStream(serializedProto);
+        ObjectInputStream ois = new ObjectInputStream(bais);
+        DescriptorProtos.FileDescriptorProto proto = (DescriptorProtos.FileDescriptorProto)ois.readObject();
+        ois.close();
+        return proto;
+    }
+    
   public static class ProtobufStructField implements StructField, Externalizable {
 
     private ObjectInspector oi = null;
@@ -38,6 +61,7 @@ public final class ProtobufStructObjectInspector extends SettableStructObjectIns
     private FieldDescriptor fieldDescriptor;
 
     public ProtobufStructField() { super(); }
+    
     
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
@@ -47,14 +71,14 @@ public final class ProtobufStructObjectInspector extends SettableStructObjectIns
         int fieldIndex = fieldDescriptor.getIndex();
         out.writeInt(fieldIndex);
         out.writeInt(messageIndex);
-        out.writeObject(proto);
+        writeProto(out, proto); 
     }
 
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         int fieldIdx = in.readInt();
         int messageIdx = in.readInt();
-        DescriptorProtos.FileDescriptorProto proto = (DescriptorProtos.FileDescriptorProto) in.readObject();
+        DescriptorProtos.FileDescriptorProto proto = readProto(in);
         FileDescriptor fd = null;
         try {
             fd = FileDescriptor.buildFrom(proto, new FileDescriptor[]{});
@@ -150,13 +174,13 @@ public final class ProtobufStructObjectInspector extends SettableStructObjectIns
     public void writeExternal(ObjectOutput out) throws IOException {
         DescriptorProtos.FileDescriptorProto proto = descriptor.getFile().toProto();
         out.writeInt(descriptor.getIndex());
-        out.writeObject(proto);
+        writeProto(out,proto);
     }
 
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         int idx = in.readInt();
-        DescriptorProtos.FileDescriptorProto proto = (DescriptorProtos.FileDescriptorProto) in.readObject();
+        DescriptorProtos.FileDescriptorProto proto = readProto(in);
         FileDescriptor fd = null;
         try {
             fd = FileDescriptor.buildFrom(proto, new FileDescriptor[]{});
