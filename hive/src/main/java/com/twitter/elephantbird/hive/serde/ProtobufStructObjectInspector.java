@@ -280,6 +280,10 @@ public final class ProtobufStructObjectInspector extends SettableStructObjectIns
     Message m = (Message) data;
     ProtobufStructField psf = (ProtobufStructField) structField;
     FieldDescriptor fieldDescriptor = psf.getFieldDescriptor();
+    
+    // This is truly ugly
+    fieldDescriptor = m.getDescriptorForType().findFieldByName(fieldDescriptor.getName());
+    
     Object result = m.getField(fieldDescriptor);
     if (fieldDescriptor.getType() == Type.ENUM) {
       return ((EnumValueDescriptor)result).getName();
