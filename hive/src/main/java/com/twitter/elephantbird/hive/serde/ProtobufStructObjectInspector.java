@@ -1,5 +1,6 @@
 package com.twitter.elephantbird.hive.serde;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.google.common.collect.Lists;
@@ -38,25 +39,44 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectIn
 public final class ProtobufStructObjectInspector extends SettableStructObjectInspector implements Externalizable{
 
   private static void writeProto(ObjectOutput out, DescriptorProtos.FileDescriptorProto proto) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(131072);
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(proto);
-        oos.close();
-        byte[] serializedProto = baos.toByteArray();
-        byte[] bytesToSave = Arrays.copyOf(serializedProto, 131072);
-        out.write(bytesToSave);  
-    }
+    ByteArrayOutputStream baos = new ByteArrayOutputStream(131072);
+    ObjectOutputStream oos = new ObjectOutputStream(baos);
+    oos.writeObject(proto);
+    oos.close();
+    byte[] serializedProto = baos.toByteArray();
+    byte[] bytesToSave = Arrays.copyOf(serializedProto, 131072);
+    out.write(bytesToSave);
+   }
     
-    private static DescriptorProtos.FileDescriptorProto readProto(ObjectInput in) throws IOException, ClassNotFoundException {
-        byte[] serializedProto = new byte[131072]; 
-        in.read(serializedProto);
-        ByteArrayInputStream bais = new ByteArrayInputStream(serializedProto);
-        ObjectInputStream ois = new ObjectInputStream(bais);
-        DescriptorProtos.FileDescriptorProto proto = (DescriptorProtos.FileDescriptorProto)ois.readObject();
-        ois.close();
-        return proto;
+  private static DescriptorProtos.FileDescriptorProto readProto(ObjectInput in) throws IOException, ClassNotFoundException {
+    byte[] serializedProto = new byte[131072];
+    in.read(serializedProto);
+    ByteArrayInputStream bais = new ByteArrayInputStream(serializedProto);
+    ObjectInputStream ois = new ObjectInputStream(bais);
+    DescriptorProtos.FileDescriptorProto proto = (DescriptorProtos.FileDescriptorProto)ois.readObject();
+    ois.close();
+    return proto;
+  }
+
+  private static List<Integer> getMessageLocator(Descriptor messageType) {
+    List<Integer> messageLocator = new ArrayList();
+    while (messageType != null) {
+        int messageIndex = messageType.getIndex();
+        messageLocator.add(0, messageIndex);
+        messageType = messageType.getContainingType();
     }
-    
+    return messageLocator;
+  }
+
+  private static Descriptor getMessage(FileDescriptor fd, List<Integer> messageLocator) {
+    int messageIdx = messageLocator.get(0);
+    Descriptor message = fd.getMessageTypes().get(messageIdx);
+    for (int i=1; i < messageLocator.size(); i++) {
+      message = message.getNestedTypes().get(messageLocator.get(i));
+    }
+    return message;
+  }
+
   public static class ProtobufStructField implements StructField, Externalizable {
 
     private ObjectInspector oi = null;
@@ -70,17 +90,17 @@ public final class ProtobufStructObjectInspector extends SettableStructObjectIns
     public void writeExternal(ObjectOutput out) throws IOException {
         Descriptor containingMessageType = fieldDescriptor.getContainingType();
         DescriptorProtos.FileDescriptorProto proto = containingMessageType.getFile().toProto();
-        int messageIndex = containingMessageType.getIndex();
         int fieldIndex = fieldDescriptor.getIndex();
+        List<Integer> messageLocator = getMessageLocator(containingMessageType);
         out.writeInt(fieldIndex);
-        out.writeInt(messageIndex);
+        out.writeObject(messageLocator);
         writeProto(out, proto); 
     }
 
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         int fieldIdx = in.readInt();
-        int messageIdx = in.readInt();
+        List<Integer> messageLocator = (List<Integer>) in.readObject();
         DescriptorProtos.FileDescriptorProto proto = readProto(in);
         FileDescriptor fd = null;
         try {
@@ -89,7 +109,7 @@ public final class ProtobufStructObjectInspector extends SettableStructObjectIns
         } catch (Descriptors.DescriptorValidationException ex) {
             throw new IOException(ex);
         }
-        Descriptor message = fd.getMessageTypes().get(messageIdx);
+        Descriptor message = getMessage(fd, messageLocator);
         fieldDescriptor = message.getFields().get(fieldIdx);
         oi = this.createOIForField();
     }
@@ -176,13 +196,14 @@ public final class ProtobufStructObjectInspector extends SettableStructObjectIns
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
         DescriptorProtos.FileDescriptorProto proto = descriptor.getFile().toProto();
-        out.writeInt(descriptor.getIndex());
+        List<Integer> messageLocator = getMessageLocator(descriptor);
+        out.writeObject(messageLocator);
         writeProto(out,proto);
     }
 
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        int idx = in.readInt();
+        List<Integer> messageLocator = (List<Integer>) in.readObject();
         DescriptorProtos.FileDescriptorProto proto = readProto(in);
         FileDescriptor fd = null;
         try {
@@ -191,7 +212,7 @@ public final class ProtobufStructObjectInspector extends SettableStructObjectIns
         } catch (Descriptors.DescriptorValidationException ex) {
             throw new IOException(ex);
         }
-        descriptor = fd.getMessageTypes().get(idx);
+        descriptor = getMessage(fd, messageLocator);
         populateStructFields();
     }
 
@@ -319,7 +340,9 @@ public final class ProtobufStructObjectInspector extends SettableStructObjectIns
     List<Object> result = Lists.newArrayList();
     Message m = (Message) data;
     for (FieldDescriptor fd : descriptor.getFields()) {
-      result.add(m.getField(fd));
+      // This is truly ugly
+      FieldDescriptor fieldDescriptor = m.getDescriptorForType().findFieldByName(fd.getName());
+      result.add(m.getField(fieldDescriptor));
     }
     return result;
   }
